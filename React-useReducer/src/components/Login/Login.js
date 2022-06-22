@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useState, useEffect, useReducer, useContext } from "react";
 
 import Card from "../UI/Card/Card";
 import classes from "./Login.module.css";
 import Button from "../UI/Button/Button";
+import AuthContext from "../../store/auth-context";
 
 //state is the previous state/value of that var, action is the action-event or what has been passed with the dispatch
 const emailReducer = (state, action) => {
@@ -45,6 +46,7 @@ const Login = (props) => {
     value: "",
     isValid: null,
   });
+  const authCtx = useContext(AuthContext);
 
   useEffect(() => {
     console.log("EFFECT RUNNING");
@@ -54,31 +56,35 @@ const Login = (props) => {
     };
   }, []);
 
-  // useEffect(() => {
-  //   const identifier = setTimeout(() => {
-  //     console.log('Checking form validity!');
-  //     setFormIsValid(
-  //       enteredEmail.includes('@') && enteredPassword.trim().length > 6
-  //     );
-  //   }, 500);
+  //pull out the speicific properties you want to use for the useEffect function.
+  // in this case we only want to check the validity, not the content changing.
+  const { isValid: emailIsValid } = emailState;
+  const { isValid: passwordIsValid } = passwordState;
 
-  //   return () => {
-  //     console.log('CLEANUP');
-  //     clearTimeout(identifier);
-  //   };
-  // }, [enteredEmail, enteredPassword]);
+  //useEffect now checks everytime the validity changes for both properties and executes setFormIsValid. ONLY when validity is changed (dependency)
+  useEffect(() => {
+    const identifier = setTimeout(() => {
+      console.log("Checking form validity!");
+      setFormIsValid(emailIsValid && passwordIsValid);
+    }, 500);
+
+    return () => {
+      console.log("CLEANUP");
+      clearTimeout(identifier);
+    };
+  }, [emailIsValid, passwordIsValid]); // dependencies are here...only when these change, and the first time ofc.
 
   //sends the email function/user action type(tag to identify) and value to reducer
   const emailChangeHandler = (event) => {
     dispatchEmail({ type: "USER_INPUT", val: event.target.value });
 
-    setFormIsValid(emailState.isValid && passwordState.isValid);
+    // setFormIsValid(emailState.isValid && passwordState.isValid);
   };
   //sends the PW function/user action type(tag to identify) and value to reducer
   const passwordChangeHandler = (event) => {
     dispatchPassword({ type: "PW_INPUT", val: event.target.value });
 
-    setFormIsValid(emailState.isValid && passwordState.isValid);
+    // setFormIsValid(emailState.isValid && passwordState.isValid);
   };
   //this shows the dipatch function what the user has done "Blur" -- to check for validity
   const validateEmailHandler = () => {
@@ -91,7 +97,7 @@ const Login = (props) => {
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(emailState.value, passwordState.value); //uses the logic from the dispatch functions
+    authCtx.onLogIn(emailState.value, passwordState.value); //uses the logic from the dispatch functions
   };
 
   return (
